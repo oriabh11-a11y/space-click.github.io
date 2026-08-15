@@ -1,0 +1,740 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Space Clicker - משחק לחיצות ברווח</title>
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Nunito:wght@400;700;900&display=swap" rel="stylesheet">
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: 'Nunito', sans-serif;
+    background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+    min-height: 100vh;
+    color: #fff;
+    text-align: center;
+    user-select: none;
+    overflow-x: hidden;
+  }
+  .game-container { padding: 20px; }
+  .title {
+    font-family: 'Orbitron', sans-serif;
+    font-size: 2.5rem;
+    font-weight: 900;
+    background: linear-gradient(90deg, #ff6b6b, #feca57, #48dbfb, #ff9ff3, #54a0ff);
+    background-size: 300% 300%;
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    animation: rainbow 3s ease infinite;
+    margin-bottom: 10px;
+  }
+  @keyframes rainbow {
+    0% { background-position: 0% 50%; }
+    50% { background-position: 100% 50%; }
+    100% { background-position: 0% 50%; }
+  }
+  .timer-display {
+    font-family: 'Orbitron', monospace;
+    font-size: 3rem;
+    font-weight: 700;
+    color: #00d2ff;
+    text-shadow: 0 0 20px rgba(0,210,255,0.5), 0 0 40px rgba(0,210,255,0.3);
+    margin: 15px 0;
+    letter-spacing: 4px;
+  }
+  .level-info {
+    display: flex;
+    justify-content: center;
+    gap: 30px;
+    margin: 15px 0;
+    flex-wrap: wrap;
+  }
+  .info-box {
+    background: rgba(255,255,255,0.08);
+    border: 2px solid rgba(255,255,255,0.15);
+    border-radius: 16px;
+    padding: 15px 25px;
+    min-width: 140px;
+  }
+  .info-label {
+    font-size: 0.85rem;
+    color: #a0a0a0;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    margin-bottom: 5px;
+  }
+  .info-value {
+    font-family: 'Orbitron', sans-serif;
+    font-size: 1.8rem;
+    font-weight: 700;
+  }
+  .target-value { color: #ff6b6b; }
+  .clicks-value { color: #48dbfb; }
+  .level-value { color: #feca57; }
+  .progress-bar-container {
+    width: 80%;
+    max-width: 600px;
+    height: 30px;
+    background: rgba(255,255,255,0.1);
+    border-radius: 15px;
+    margin: 20px auto;
+    overflow: hidden;
+    border: 2px solid rgba(255,255,255,0.2);
+  }
+  .progress-bar {
+    height: 100%;
+    background: linear-gradient(90deg, #ff6b6b, #feca57, #48dbfb, #1dd1a1);
+    border-radius: 15px;
+    transition: width 0.05s ease;
+    box-shadow: 0 0 20px rgba(72,219,251,0.4);
+  }
+  .space-indicator {
+    width: 260px;
+    height: 100px;
+    border-radius: 16px;
+    border: 3px solid rgba(255,255,255,0.3);
+    background: linear-gradient(180deg, rgba(255,255,255,0.1), rgba(255,255,255,0.05));
+    margin: 25px auto;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    font-family: 'Orbitron', sans-serif;
+    transition: all 0.05s;
+    position: relative;
+  }
+  .space-indicator.pressed {
+    transform: scale(0.92);
+    background: linear-gradient(180deg, rgba(72,219,251,0.3), rgba(72,219,251,0.1));
+    border-color: #48dbfb;
+    box-shadow: 0 0 40px rgba(72,219,251,0.5);
+  }
+  .space-key { font-size: 2.2rem; font-weight: 900; letter-spacing: 4px; }
+  .space-hint { font-size: 0.8rem; color: #888; margin-top: 4px; text-transform: uppercase; letter-spacing: 2px; }
+  .cps-display {
+    font-family: 'Orbitron', sans-serif;
+    font-size: 1.2rem;
+    color: #ff9ff3;
+    margin-top: 5px;
+  }
+  .setup-screen, .game-screen, .result-screen, .leaderboard-screen {
+    max-width: 800px;
+    margin: 0 auto;
+    animation: fadeIn 0.4s ease;
+  }
+  @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+  .setup-screen h2, .result-screen h2 {
+    font-family: 'Orbitron', sans-serif;
+    font-size: 1.8rem;
+    margin-bottom: 20px;
+    color: #feca57;
+  }
+  .number-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
+    gap: 12px;
+    max-width: 500px;
+    margin: 20px auto;
+  }
+  .num-btn {
+    padding: 15px;
+    border: 2px solid rgba(255,255,255,0.2);
+    border-radius: 12px;
+    background: rgba(255,255,255,0.05);
+    color: #fff;
+    font-family: 'Orbitron', sans-serif;
+    font-size: 1.1rem;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+  .num-btn:hover {
+    background: rgba(255,255,255,0.15);
+    border-color: #48dbfb;
+    transform: translateY(-3px);
+    box-shadow: 0 5px 20px rgba(72,219,251,0.3);
+  }
+  .num-btn.selected {
+    background: linear-gradient(135deg, #48dbfb, #0abde3);
+    border-color: #fff;
+    box-shadow: 0 0 25px rgba(72,219,251,0.5);
+  }
+  .custom-input {
+    background: rgba(255,255,255,0.08);
+    border: 2px solid rgba(255,255,255,0.2);
+    border-radius: 12px;
+    padding: 15px 20px;
+    color: #fff;
+    font-family: 'Orbitron', sans-serif;
+    font-size: 1.2rem;
+    width: 200px;
+    text-align: center;
+    margin: 10px;
+  }
+  .custom-input:focus {
+    outline: none;
+    border-color: #48dbfb;
+    box-shadow: 0 0 20px rgba(72,219,251,0.3);
+  }
+  .start-btn, .next-btn, .restart-btn, .menu-btn {
+    padding: 15px 50px;
+    font-family: 'Orbitron', sans-serif;
+    font-size: 1.3rem;
+    font-weight: 700;
+    border: none;
+    border-radius: 50px;
+    cursor: pointer;
+    margin: 10px;
+    transition: all 0.3s;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+  }
+  .start-btn {
+    background: linear-gradient(135deg, #1dd1a1, #10ac84);
+    color: #fff;
+    box-shadow: 0 5px 25px rgba(29,209,161,0.4);
+  }
+  .next-btn {
+    background: linear-gradient(135deg, #feca57, #f39c12);
+    color: #1a1a2e;
+    box-shadow: 0 5px 25px rgba(254,202,87,0.4);
+  }
+  .restart-btn {
+    background: linear-gradient(135deg, #ff6b6b, #ee5a5a);
+    color: #fff;
+    box-shadow: 0 5px 25px rgba(255,107,107,0.4);
+  }
+  .menu-btn {
+    background: linear-gradient(135deg, #a29bfe, #6c5ce7);
+    color: #fff;
+    box-shadow: 0 5px 25px rgba(162,155,254,0.4);
+  }
+  .start-btn:hover, .next-btn:hover, .restart-btn:hover, .menu-btn:hover {
+    transform: translateY(-3px) scale(1.05);
+  }
+  .animal-rank { font-size: 5rem; margin: 10px 0; }
+  .animal-name {
+    font-family: 'Orbitron', sans-serif;
+    font-size: 1.5rem;
+    font-weight: 700;
+    margin-bottom: 5px;
+  }
+  .animal-desc { color: #a0a0a0; font-size: 1rem; }
+  .result-time {
+    font-family: 'Orbitron', sans-serif;
+    font-size: 2.5rem;
+    color: #00d2ff;
+    margin: 15px 0;
+    text-shadow: 0 0 20px rgba(0,210,255,0.5);
+  }
+  .leaderboard-table {
+    width: 100%;
+    max-width: 600px;
+    margin: 20px auto;
+    border-collapse: collapse;
+  }
+  .leaderboard-table th {
+    font-family: 'Orbitron', sans-serif;
+    padding: 12px;
+    background: rgba(255,255,255,0.1);
+    color: #feca57;
+    font-size: 0.9rem;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+  }
+  .leaderboard-table td {
+    padding: 12px;
+    border-bottom: 1px solid rgba(255,255,255,0.1);
+    font-size: 1rem;
+  }
+  .leaderboard-table tr:nth-child(even) { background: rgba(255,255,255,0.03); }
+  .rank-1 { color: #ffd700; font-weight: 900; }
+  .rank-2 { color: #c0c0c0; font-weight: 700; }
+  .rank-3 { color: #cd7f32; font-weight: 700; }
+  .current-run { background: rgba(72,219,251,0.15) !important; border-left: 3px solid #48dbfb; }
+  .hidden { display: none !important; }
+  .stats-row {
+    display: flex;
+    justify-content: center;
+    gap: 20px;
+    margin: 15px 0;
+    flex-wrap: wrap;
+  }
+  .stat-pill {
+    background: rgba(255,255,255,0.08);
+    border-radius: 25px;
+    padding: 8px 20px;
+    font-size: 0.9rem;
+    border: 1px solid rgba(255,255,255,0.15);
+  }
+  .particles {
+    position: fixed;
+    top: 0; left: 0;
+    width: 100%; height: 100%;
+    pointer-events: none;
+    z-index: 1000;
+  }
+  .particle {
+    position: absolute;
+    width: 8px; height: 8px;
+    border-radius: 50%;
+    animation: particle-fly 0.8s ease-out forwards;
+  }
+  @keyframes particle-fly {
+    0% { opacity: 1; transform: translate(0,0) scale(1); }
+    100% { opacity: 0; transform: translate(var(--tx), var(--ty)) scale(0); }
+  }
+  .combo-text {
+    position: absolute;
+    font-family: 'Orbitron', sans-serif;
+    font-weight: 900;
+    font-size: 1.5rem;
+    color: #feca57;
+    pointer-events: none;
+    animation: combo-float 0.8s ease-out forwards;
+    text-shadow: 0 0 10px rgba(254,202,87,0.8);
+  }
+  @keyframes combo-float {
+    0% { opacity: 1; transform: translateY(0) scale(1); }
+    100% { opacity: 0; transform: translateY(-80px) scale(1.5); }
+  }
+  .cheetah { color: #ff6b6b; }
+  .falcon { color: #feca57; }
+  .wolf { color: #a29bfe; }
+  .horse { color: #ff9ff3; }
+  .rabbit { color: #48dbfb; }
+  .cat { color: #1dd1a1; }
+  .dog { color: #fab1a0; }
+  .elephant { color: #74b9ff; }
+  .turtle { color: #55efc4; }
+  .snail { color: #b2bec3; }
+  .space-only-notice {
+    background: rgba(255,107,107,0.15);
+    border: 2px dashed rgba(255,107,107,0.5);
+    border-radius: 12px;
+    padding: 10px 20px;
+    margin: 10px auto;
+    max-width: 400px;
+    color: #ff9f9f;
+    font-size: 0.9rem;
+  }
+  .subtitle { color: #a0a0a0; margin-bottom: 20px; font-size: 1rem; }
+  .footer { margin-top: 40px; color: #555; font-size: 0.8rem; }
+</style>
+</head>
+<body>
+<div class="game-container">
+  <div class="particles" id="particles"></div>
+
+  <!-- SETUP SCREEN -->
+  <div class="setup-screen" id="setupScreen">
+    <div class="title">⚡ SPACE CLICKER ⚡</div>
+    <h2>בחר מספר התחלתי</h2>
+    <p class="subtitle">עד 1,000,000 לחיצות! רק מקש רווח עובד.</p>
+
+    <div class="number-grid">
+      <button class="num-btn" data-val="10">10</button>
+      <button class="num-btn" data-val="25">25</button>
+      <button class="num-btn" data-val="50">50</button>
+      <button class="num-btn" data-val="100">100</button>
+      <button class="num-btn" data-val="250">250</button>
+      <button class="num-btn" data-val="500">500</button>
+      <button class="num-btn" data-val="1000">1K</button>
+      <button class="num-btn" data-val="5000">5K</button>
+      <button class="num-btn" data-val="10000">10K</button>
+      <button class="num-btn" data-val="50000">50K</button>
+      <button class="num-btn" data-val="100000">100K</button>
+      <button class="num-btn" data-val="1000000">1M</button>
+    </div>
+
+    <div style="margin: 20px 0;">
+      <p style="color:#a0a0a0; margin-bottom:10px;">או הזן מספר מותאם אישית:</p>
+      <input type="number" class="custom-input" id="customTarget" min="1" max="1000000" placeholder="1 - 1,000,000">
+    </div>
+
+    <button class="start-btn" id="startBtn">🚀 התחל משחק</button>
+    <div class="footer">Made with 💙 by Space Clicker</div>
+  </div>
+
+  <!-- GAME SCREEN -->
+  <div class="game-screen hidden" id="gameScreen">
+    <div class="title">⚡ SPACE CLICKER ⚡</div>
+
+    <div class="timer-display" id="timerDisplay">00:00.00</div>
+
+    <div class="level-info">
+      <div class="info-box">
+        <div class="info-label">רמה</div>
+        <div class="info-value level-value" id="levelDisplay">1</div>
+      </div>
+      <div class="info-box">
+        <div class="info-label">מטרה</div>
+        <div class="info-value target-value" id="targetDisplay">10</div>
+      </div>
+      <div class="info-box">
+        <div class="info-label">לחיצות</div>
+        <div class="info-value clicks-value" id="clicksDisplay">0</div>
+      </div>
+    </div>
+
+    <div class="progress-bar-container">
+      <div class="progress-bar" id="progressBar" style="width: 0%"></div>
+    </div>
+
+    <div class="cps-display" id="cpsDisplay">0.00 לחיצות/שנייה</div>
+
+    <div class="space-only-notice">⚠️ רק מקש רווח (Space) עובד — בלי עכבר!</div>
+
+    <div class="space-indicator" id="spaceIndicator">
+      <div class="space-key">SPACE</div>
+      <div class="space-hint">לחץ על רווח!</div>
+    </div>
+
+    <div class="stats-row">
+      <div class="stat-pill">סה"כ לחיצות: <span id="totalClicks">0</span></div>
+      <div class="stat-pill">שיא CPS: <span id="maxCps">0.00</span></div>
+    </div>
+  </div>
+
+  <!-- RESULT SCREEN -->
+  <div class="result-screen hidden" id="resultScreen">
+    <div class="title">🎉 השלמת רמה! 🎉</div>
+
+    <div class="animal-rank" id="animalEmoji">🐆</div>
+    <div class="animal-name" id="animalName">צ'יטה</div>
+    <div class="animal-desc" id="animalDesc">מהירות על!</div>
+
+    <div class="result-time" id="resultTime">00:05.42</div>
+
+    <div class="stats-row">
+      <div class="stat-pill">רמה: <span id="resultLevel">1</span></div>
+      <div class="stat-pill">לחיצות: <span id="resultClicks">10</span></div>
+      <div class="stat-pill">CPS: <span id="resultCps">1.85</span></div>
+    </div>
+
+    <div style="margin-top: 30px;">
+      <button class="next-btn" id="nextLevelBtn">⬆️ רמה הבאה (<span id="nextTarget">20</span>)</button>
+      <br>
+      <button class="restart-btn" id="restartBtn">🔄 שחק שוב</button>
+      <button class="menu-btn" id="menuBtn">📋 לוח תוצאות</button>
+    </div>
+  </div>
+
+  <!-- LEADERBOARD SCREEN -->
+  <div class="leaderboard-screen hidden" id="leaderboardScreen">
+    <div class="title">🏆 לוח תוצאות 🏆</div>
+
+    <h2 style="color:#feca57; font-family:'Orbitron'; margin-bottom:5px;">
+      מספר: <span id="lbTarget">10</span> לחיצות
+    </h2>
+
+    <table class="leaderboard-table">
+      <thead>
+        <tr>
+          <th>דירוג</th>
+          <th>חיה</th>
+          <th>זמן</th>
+          <th>CPS</th>
+        </tr>
+      </thead>
+      <tbody id="leaderboardBody">
+      </tbody>
+    </table>
+
+    <div style="margin-top: 20px;">
+      <button class="start-btn" id="playAgainBtn">🎮 שחק שוב</button>
+      <button class="menu-btn" id="mainMenuBtn">🏠 תפריט ראשי</button>
+    </div>
+  </div>
+</div>
+
+<script>
+(function() {
+  let target = 10;
+  let currentClicks = 0;
+  let level = 1;
+  let startTime = null;
+  let timerInterval = null;
+  let isRunning = false;
+  let isFinished = false;
+  let totalClicksAll = 0;
+  let maxCps = 0;
+
+  const animals = [
+    { name: 'צ'יטה', emoji: '🐆', min: 15, desc: 'מהירות על! אתה מכונה!', color: 'cheetah' },
+    { name: 'בז', emoji: '🦅', min: 12, desc: 'מהיר כמו רוח!', color: 'falcon' },
+    { name: 'זאב', emoji: '🐺', min: 10, desc: 'מהיר ואגרסיבי!', color: 'wolf' },
+    { name: 'סוס', emoji: '🐴', min: 8, desc: 'מהירות מרשימה!', color: 'horse' },
+    { name: 'ארנב', emoji: '🐇', min: 6, desc: 'מהיר וזריז!', color: 'rabbit' },
+    { name: 'חתול', emoji: '🐈', min: 4, desc: 'מהירות טובה!', color: 'cat' },
+    { name: 'כלב', emoji: '🐕', min: 3, desc: 'קצב סביר', color: 'dog' },
+    { name: 'פיל', emoji: '🐘', min: 2, desc: 'איטי אבל יציב', color: 'elephant' },
+    { name: 'צב', emoji: '🐢', min: 1, desc: 'לאט אבל בטוח...', color: 'turtle' },
+    { name: 'חילזון', emoji: '🐌', min: 0, desc: 'תתאמן עוד קצת!', color: 'snail' }
+  ];
+
+  const setupScreen = document.getElementById('setupScreen');
+  const gameScreen = document.getElementById('gameScreen');
+  const resultScreen = document.getElementById('resultScreen');
+  const leaderboardScreen = document.getElementById('leaderboardScreen');
+  const customTarget = document.getElementById('customTarget');
+  const startBtn = document.getElementById('startBtn');
+  const spaceIndicator = document.getElementById('spaceIndicator');
+  const timerDisplay = document.getElementById('timerDisplay');
+  const targetDisplay = document.getElementById('targetDisplay');
+  const clicksDisplay = document.getElementById('clicksDisplay');
+  const levelDisplay = document.getElementById('levelDisplay');
+  const progressBar = document.getElementById('progressBar');
+  const cpsDisplay = document.getElementById('cpsDisplay');
+  const totalClicksEl = document.getElementById('totalClicks');
+  const maxCpsEl = document.getElementById('maxCps');
+  const particlesContainer = document.getElementById('particles');
+
+  const animalEmoji = document.getElementById('animalEmoji');
+  const animalName = document.getElementById('animalName');
+  const animalDesc = document.getElementById('animalDesc');
+  const resultTime = document.getElementById('resultTime');
+  const resultLevel = document.getElementById('resultLevel');
+  const resultClicks = document.getElementById('resultClicks');
+  const resultCps = document.getElementById('resultCps');
+  const nextLevelBtn = document.getElementById('nextLevelBtn');
+  const nextTargetSpan = document.getElementById('nextTarget');
+  const restartBtn = document.getElementById('restartBtn');
+  const menuBtn = document.getElementById('menuBtn');
+
+  const lbTarget = document.getElementById('lbTarget');
+  const leaderboardBody = document.getElementById('leaderboardBody');
+  const playAgainBtn = document.getElementById('playAgainBtn');
+  const mainMenuBtn = document.getElementById('mainMenuBtn');
+
+  function getLeaderboard() {
+    try { return JSON.parse(localStorage.getItem('spaceClickerLB') || '{}'); }
+    catch(e) { return {}; }
+  }
+  function saveLeaderboard(lb) {
+    localStorage.setItem('spaceClickerLB', JSON.stringify(lb));
+  }
+  function addToLeaderboard(targetNum, timeMs, cps) {
+    const lb = getLeaderboard();
+    const key = String(targetNum);
+    if (!lb[key]) lb[key] = [];
+    lb[key].push({ time: timeMs, cps: cps, date: Date.now() });
+    lb[key].sort((a,b) => a.time - b.time);
+    lb[key] = lb[key].slice(0, 20);
+    saveLeaderboard(lb);
+  }
+  function getAnimalRank(cps) {
+    for (let a of animals) { if (cps >= a.min) return a; }
+    return animals[animals.length - 1];
+  }
+
+  function showScreen(screen) {
+    [setupScreen, gameScreen, resultScreen, leaderboardScreen].forEach(s => s.classList.add('hidden'));
+    screen.classList.remove('hidden');
+  }
+
+  document.querySelectorAll('.num-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('.num-btn').forEach(b => b.classList.remove('selected'));
+      btn.classList.add('selected');
+      customTarget.value = '';
+      target = parseInt(btn.dataset.val);
+    });
+  });
+
+  startBtn.addEventListener('click', () => {
+    const custom = parseInt(customTarget.value);
+    if (custom && custom >= 1 && custom <= 1000000) target = custom;
+    if (!target || target < 1) target = 10;
+    if (target > 1000000) target = 1000000;
+    startGame();
+  });
+
+  function startGame() {
+    currentClicks = 0;
+    level = 1;
+    startTime = null;
+    isRunning = false;
+    isFinished = false;
+    totalClicksAll = 0;
+    maxCps = 0;
+
+    targetDisplay.textContent = target.toLocaleString();
+    clicksDisplay.textContent = '0';
+    levelDisplay.textContent = '1';
+    timerDisplay.textContent = '00:00.00';
+    progressBar.style.width = '0%';
+    cpsDisplay.textContent = '0.00 לחיצות/שנייה';
+    totalClicksEl.textContent = '0';
+    maxCpsEl.textContent = '0.00';
+    spaceIndicator.classList.remove('pressed');
+    spaceIndicator.querySelector('.space-hint').textContent = 'לחץ על רווח!';
+
+    showScreen(gameScreen);
+    window.focus();
+  }
+
+  function formatTime(ms) {
+    const totalSec = Math.floor(ms / 1000);
+    const min = Math.floor(totalSec / 60);
+    const sec = totalSec % 60;
+    const hun = Math.floor((ms % 1000) / 10);
+    return String(min).padStart(2,'0') + ':' + String(sec).padStart(2,'0') + '.' + String(hun).padStart(2,'0');
+  }
+
+  function updateTimer() {
+    if (!startTime) return;
+    const elapsed = Date.now() - startTime;
+    timerDisplay.textContent = formatTime(elapsed);
+    const sec = elapsed / 1000;
+    const cps = sec > 0 ? currentClicks / sec : 0;
+    cpsDisplay.textContent = cps.toFixed(2) + ' לחיצות/שנייה';
+    if (cps > maxCps) maxCps = cps;
+    maxCpsEl.textContent = maxCps.toFixed(2);
+  }
+
+  function spawnParticles(x, y) {
+    const colors = ['#ff6b6b', '#feca57', '#48dbfb', '#ff9ff3', '#1dd1a1', '#a29bfe'];
+    for (let i = 0; i < 8; i++) {
+      const p = document.createElement('div');
+      p.className = 'particle';
+      p.style.left = x + 'px';
+      p.style.top = y + 'px';
+      p.style.background = colors[Math.floor(Math.random() * colors.length)];
+      const angle = (Math.PI * 2 * i) / 8;
+      const dist = 50 + Math.random() * 80;
+      p.style.setProperty('--tx', Math.cos(angle) * dist + 'px');
+      p.style.setProperty('--ty', Math.sin(angle) * dist + 'px');
+      particlesContainer.appendChild(p);
+      setTimeout(() => p.remove(), 800);
+    }
+  }
+
+  function spawnComboText(x, y, text) {
+    const el = document.createElement('div');
+    el.className = 'combo-text';
+    el.textContent = text;
+    el.style.left = x + 'px';
+    el.style.top = y + 'px';
+    particlesContainer.appendChild(el);
+    setTimeout(() => el.remove(), 800);
+  }
+
+  function doClick() {
+    if (isFinished) return;
+    if (!isRunning) {
+      isRunning = true;
+      startTime = Date.now();
+      timerInterval = setInterval(updateTimer, 30);
+      spaceIndicator.querySelector('.space-hint').textContent = 'דווש ברווח!';
+    }
+
+    currentClicks++;
+    totalClicksAll++;
+    clicksDisplay.textContent = currentClicks.toLocaleString();
+    totalClicksEl.textContent = totalClicksAll.toLocaleString();
+
+    const progress = (currentClicks / target) * 100;
+    progressBar.style.width = Math.min(progress, 100) + '%';
+
+    const rect = spaceIndicator.getBoundingClientRect();
+    const cx = rect.left + rect.width / 2;
+    const cy = rect.top + rect.height / 2;
+    spawnParticles(cx, cy);
+
+    if (currentClicks === target) {
+      spawnComboText(cx, cy - 50, '🎯 GOAL!');
+    } else if (currentClicks % 100 === 0 && currentClicks > 0) {
+      spawnComboText(cx, cy - 50, '🔥 x' + currentClicks);
+    } else if (currentClicks % 50 === 0 && currentClicks > 0) {
+      spawnComboText(cx, cy - 50, '⚡ x' + currentClicks);
+    }
+
+    if (currentClicks >= target) {
+      completeLevel();
+    }
+  }
+
+  function completeLevel() {
+    clearInterval(timerInterval);
+    isFinished = true;
+    spaceIndicator.classList.remove('pressed');
+    spaceIndicator.querySelector('.space-hint').textContent = 'הושלם!';
+
+    const elapsed = Date.now() - startTime;
+    const sec = elapsed / 1000;
+    const cps = sec > 0 ? target / sec : 0;
+
+    addToLeaderboard(target, elapsed, cps);
+
+    const animal = getAnimalRank(cps);
+    animalEmoji.textContent = animal.emoji;
+    animalName.textContent = animal.name;
+    animalName.className = 'animal-name ' + animal.color;
+    animalDesc.textContent = animal.desc;
+    resultTime.textContent = formatTime(elapsed);
+    resultLevel.textContent = level;
+    resultClicks.textContent = target.toLocaleString();
+    resultCps.textContent = cps.toFixed(2);
+
+    nextTargetSpan.textContent = (target * 2).toLocaleString();
+
+    showScreen(resultScreen);
+  }
+
+  document.addEventListener('keydown', (e) => {
+    if (e.code !== 'Space') return;
+    e.preventDefault();
+    if (!gameScreen.classList.contains('hidden') && !isFinished) {
+      spaceIndicator.classList.add('pressed');
+      doClick();
+    }
+  });
+
+  document.addEventListener('keyup', (e) => {
+    if (e.code === 'Space') {
+      spaceIndicator.classList.remove('pressed');
+    }
+  });
+
+  nextLevelBtn.addEventListener('click', () => {
+    target *= 2;
+    if (target > 1000000) {
+      alert('🎉 הגעת למקסימום! 1,000,000 לחיצות! אתה אלוף!');
+      target = 1000000;
+    }
+    level++;
+    startGame();
+  });
+
+  restartBtn.addEventListener('click', () => { startGame(); });
+  menuBtn.addEventListener('click', () => { showLeaderboard(); });
+
+  function showLeaderboard() {
+    lbTarget.textContent = target.toLocaleString();
+    const lb = getLeaderboard();
+    const entries = lb[String(target)] || [];
+    leaderboardBody.innerHTML = '';
+    if (entries.length === 0) {
+      leaderboardBody.innerHTML = '<tr><td colspan="4" style="color:#888;">אין תוצאות עדיין</td></tr>';
+    } else {
+      entries.forEach((entry, i) => {
+        const animal = getAnimalRank(entry.cps);
+        const tr = document.createElement('tr');
+        if (i < 3) tr.classList.add('rank-' + (i+1));
+        tr.innerHTML = '<td class="' + (i < 3 ? 'rank-'+(i+1) : '') + '">#' + (i+1) + '</td>' +
+          '<td><span style="font-size:1.3rem;">' + animal.emoji + '</span> <span class="' + animal.color + '">' + animal.name + '</span></td>' +
+          '<td>' + formatTime(entry.time) + '</td>' +
+          '<td>' + entry.cps.toFixed(2) + '</td>';
+        leaderboardBody.appendChild(tr);
+      });
+    }
+    showScreen(leaderboardScreen);
+  }
+
+  playAgainBtn.addEventListener('click', () => { startGame(); });
+  mainMenuBtn.addEventListener('click', () => { showScreen(setupScreen); });
+})();
+</script>
+</body>
+</html>
